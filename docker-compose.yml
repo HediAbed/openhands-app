@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  openhands:
+    image: docker.all-hands.dev/all-hands-ai/openhands:0.13
+    container_name: openhands-app
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+      - "32728:32728"
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    environment:
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.13-nikolaik
+      - LOG_ALL_EVENTS=true
+      - HOST_DOCKER_INTERNAL=host.docker.internal
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - WSL_HOST_IP=172.23.128.1  # Your WSL IP
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    networks:
+      openhands-network:
+        aliases:
+          - openhands.local
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  openhands-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16  # Chosen to avoid conflicts
+          gateway: 172.30.0.1
+    driver_opts:
+      com.docker.network.bridge.name: openhands-br
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
